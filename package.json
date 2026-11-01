@@ -1,0 +1,13 @@
+{
+  "name": "booknook-server",
+  "version": "0.0.1",
+  "description": "A RESTful API for BookNook, built with Node.js, Express.js, and MongoDB. Handles book management, borrowing operations, and secure authentication.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
