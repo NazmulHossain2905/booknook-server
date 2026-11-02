@@ -164,6 +164,37 @@ app.patch("/books/:id", async (req, res) => {
   }
 });
 
+// DELETE /books/:id — delete a book
+app.delete("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const result = await booksCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Book deleted successfully",
+      data: null,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
