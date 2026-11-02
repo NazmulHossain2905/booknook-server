@@ -47,6 +47,31 @@ app.get("/", (_req, res) => {
   });
 });
 
+/* ---------------- BOOK ROUTES ----------------- */
+// POST /books — add a book
+app.post("/books", async (req, res) => {
+  try {
+    const bookDoc = {
+      ...req.body,
+      addedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await booksCollection.insertOne(bookDoc);
+
+    res.status(201).json({
+      success: true,
+      message: "Book added successfully",
+      data: {
+        _id: result.insertedId,
+        ...bookDoc,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
