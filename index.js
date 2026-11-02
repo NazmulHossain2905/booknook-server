@@ -119,6 +119,51 @@ app.get("/books/:id", async (req, res) => {
   }
 });
 
+// PATCH /books/:id — update a book
+app.patch("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const { _id, addedAt, updatedAt, ...updatedData } = req.body;
+
+    const updatedDoc = {
+      ...updatedData,
+      updatedAt: new Date(),
+    };
+
+    const result = await booksCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedDoc },
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    const updatedBook = await booksCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Book updated successfully",
+      data: updatedBook,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
