@@ -88,6 +88,37 @@ app.get("/books", async (req, res) => {
   }
 });
 
+// GET /books/:id — get one book
+app.get("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const book = await booksCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Book retrieved successfully",
+      data: book,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
