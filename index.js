@@ -1,7 +1,7 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import morgan from "morgan";
 import { logger } from "./utils/logger.js";
 
@@ -189,6 +189,24 @@ app.delete("/books/:id", async (req, res) => {
       success: true,
       message: "Book deleted successfully",
       data: null,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// GET /my-books — get all books (public)
+app.get("/my-books/:userEmail", async (req, res) => {
+  const { userEmail } = req.params;
+  const filters = { addedByEmail: userEmail };
+
+  try {
+    const allBooks = await booksCollection.find(filters).toArray();
+
+    res.status(200).json({
+      success: true,
+      message: "Books retrieved successfully",
+      data: allBooks,
     });
   } catch (error) {
     console.error(error);
