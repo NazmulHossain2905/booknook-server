@@ -72,6 +72,22 @@ app.post("/books", async (req, res) => {
   }
 });
 
+// GET /books — get all books (public)
+app.get("/books", async (req, res) => {
+  try {
+    const limit = Number(req.query.limit ?? 0);
+    const allBooks = await booksCollection.find().limit(limit).toArray();
+
+    res.status(200).json({
+      success: true,
+      message: "Books retrieved successfully",
+      data: allBooks,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
