@@ -228,6 +228,11 @@ app.post("/borrows", async (req, res) => {
 
     const result = await borrowsCollection.insertOne(borrowDoc);
 
+    await booksCollection.updateOne(
+      { _id: new ObjectId(borrowDoc.bookId) },
+      { $inc: { availableCopies: -1 } },
+    );
+
     res.status(201).json({
       success: true,
       message: "Borrow added successfully",
@@ -258,6 +263,47 @@ app.get("/borrows/:userEmail", async (req, res) => {
       success: true,
       message: "Borrows retrieved successfully",
       data: allBorrows,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+// DELETE /borrows/:id — return a book
+app.delete("/borrows/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid borrow ID",
+      });
+    }
+
+    const borrow = await borrowsCollection.findOne(
+      { _id: new ObjectId(id) },
+      { projection: { bookId: 1 } },
+    );
+
+    await booksCollection.updateOne(
+      { _id: new ObjectId(borrow.bookId) },
+      { $inc: { availableCopies: 1 } },
+    );
+
+    const result = await borrowsCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Book deleted successfully",
+      data: null,
     });
   } catch (error) {
     console.error(error);
