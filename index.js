@@ -213,6 +213,39 @@ app.get("/my-books/:userEmail", async (req, res) => {
   }
 });
 
+/* ---------------- BORROW ROUTES ----------------- */
+// POST /borrows — borrow a book
+app.post("/borrows", async (req, res) => {
+  try {
+    const borrowDoc = {
+      ...req.body,
+
+      borrowDate: new Date(),
+      returnDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      returnedAt: null,
+      status: "borrowed",
+    };
+
+    const result = await borrowsCollection.insertOne(borrowDoc);
+
+    res.status(201).json({
+      success: true,
+      message: "Borrow added successfully",
+      data: {
+        _id: result.insertedId,
+        ...borrowDoc,
+      },
+    });
+  } catch (error) {
+    console.error("Borrow creation error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
