@@ -4,6 +4,7 @@ import express from "express";
 import { MongoClient, ObjectId } from "mongodb";
 import morgan from "morgan";
 import { logger } from "./utils/logger.js";
+import { verifyToken } from "./utils/verifyToken.js";
 
 const app = express();
 
@@ -49,7 +50,7 @@ app.get("/", (_req, res) => {
 
 /* ---------------- BOOK ROUTES ----------------- */
 // POST /books — add a book
-app.post("/books", async (req, res) => {
+app.post("/books", verifyToken, async (req, res) => {
   try {
     const { _id, addedAt, updatedAt, availableCopies, ...bookData } = req.body;
 
@@ -110,7 +111,7 @@ app.get("/books", async (req, res) => {
 });
 
 // GET /books/:id — get one book
-app.get("/books/:id", async (req, res) => {
+app.get("/books/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -146,7 +147,7 @@ app.get("/books/:id", async (req, res) => {
 });
 
 // PATCH /books/:id — update a book
-app.patch("/books/:id", async (req, res) => {
+app.patch("/books/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -229,7 +230,7 @@ app.patch("/books/:id", async (req, res) => {
 });
 
 // DELETE /books/:id — delete a book
-app.delete("/books/:id", async (req, res) => {
+app.delete("/books/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -264,13 +265,16 @@ app.delete("/books/:id", async (req, res) => {
   }
 });
 
-// GET /my-books — get all books (public)
-app.get("/my-books/:userEmail", async (req, res) => {
+// GET /my-books — get all books of the logged in user
+app.get("/my-books/:userEmail", verifyToken, async (req, res) => {
   const { userEmail } = req.params;
   const filters = { addedByEmail: userEmail };
 
   try {
-    const allBooks = await booksCollection.find(filters).toArray();
+    const allBooks = await booksCollection
+      .find(filters)
+      .sort({ addedAt: -1 })
+      .toArray();
 
     res.status(200).json({
       success: true,
@@ -289,7 +293,7 @@ app.get("/my-books/:userEmail", async (req, res) => {
 
 /* ---------------- BORROW ROUTES ----------------- */
 // POST /borrows — borrow a book
-app.post("/borrows", async (req, res) => {
+app.post("/borrows", verifyToken, async (req, res) => {
   try {
     const { userEmail, bookId } = req.body;
 
@@ -358,12 +362,15 @@ app.post("/borrows", async (req, res) => {
 });
 
 // GET /borrows/:userEmail — get the borrows of the logged in user
-app.get("/borrows/:userEmail", async (req, res) => {
+app.get("/borrows/:userEmail", verifyToken, async (req, res) => {
   const { userEmail } = req.params;
   const filters = { userEmail: userEmail };
 
   try {
-    const allBorrows = await borrowsCollection.find(filters).toArray();
+    const allBorrows = await borrowsCollection
+      .find(filters)
+      .sort({ borrowDate: -1 })
+      .toArray();
 
     res.status(200).json({
       success: true,
@@ -381,7 +388,7 @@ app.get("/borrows/:userEmail", async (req, res) => {
 });
 
 // PATCH /borrows/:id — return a book
-app.patch("/borrows/:id", async (req, res) => {
+app.patch("/borrows/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
 
