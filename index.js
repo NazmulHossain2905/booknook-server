@@ -69,6 +69,11 @@ app.post("/books", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -85,6 +90,11 @@ app.get("/books", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -116,6 +126,11 @@ app.get("/books/:id", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -161,6 +176,11 @@ app.patch("/books/:id", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -192,6 +212,11 @@ app.delete("/books/:id", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -210,6 +235,11 @@ app.get("/my-books/:userEmail", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -217,6 +247,19 @@ app.get("/my-books/:userEmail", async (req, res) => {
 // POST /borrows — borrow a book
 app.post("/borrows", async (req, res) => {
   try {
+    const alreadyBorrowed = await borrowsCollection.findOne({
+      userEmail: req.body.userEmail,
+      bookId: req.body.bookId,
+      status: "borrowed",
+    });
+
+    if (alreadyBorrowed) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already borrowed this book",
+      });
+    }
+
     const borrowDoc = {
       ...req.body,
 
@@ -226,14 +269,24 @@ app.post("/borrows", async (req, res) => {
       status: "borrowed",
     };
 
-    const result = await borrowsCollection.insertOne(borrowDoc);
-
-    await booksCollection.updateOne(
-      { _id: new ObjectId(borrowDoc.bookId) },
+    const bookUpdate = await booksCollection.updateOne(
+      {
+        _id: new ObjectId(borrowDoc.bookId),
+        availableCopies: { $gt: 0 },
+      },
       { $inc: { availableCopies: -1 } },
     );
 
-    res.status(201).json({
+    if (bookUpdate.modifiedCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Book is unavailable or out of stock",
+      });
+    }
+
+    const result = await borrowsCollection.insertOne(borrowDoc);
+
+    return res.status(201).json({
       success: true,
       message: "Borrow added successfully",
       data: {
@@ -266,11 +319,16 @@ app.get("/borrows/:userEmail", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
-// DELETE /borrows/:id — return a book
-app.delete("/borrows/:id", async (req, res) => {
+// PATCH /borrows/:id — return a book
+app.patch("/borrows/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -281,32 +339,58 @@ app.delete("/borrows/:id", async (req, res) => {
       });
     }
 
-    const borrow = await borrowsCollection.findOne(
-      { _id: new ObjectId(id) },
-      { projection: { bookId: 1 } },
+    const borrow = await borrowsCollection.findOne({
+      _id: new ObjectId(id),
+      status: "borrowed",
+    });
+
+    if (!borrow) {
+      return res.status(404).json({
+        success: false,
+        message: "Borrow record not found or already returned",
+      });
+    }
+
+    const returnedAt = new Date();
+
+    const result = await borrowsCollection.updateOne(
+      { _id: borrow._id, status: "borrowed" },
+      {
+        $set: {
+          returnedAt,
+          status: "returned",
+        },
+      },
     );
+
+    if (result.modifiedCount === 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Book has already been returned",
+      });
+    }
 
     await booksCollection.updateOne(
       { _id: new ObjectId(borrow.bookId) },
       { $inc: { availableCopies: 1 } },
     );
 
-    const result = await borrowsCollection.deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
-    }
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Book deleted successfully",
-      data: null,
+      message: "Book returned successfully",
+      data: {
+        ...borrow,
+        returnedAt,
+        status: "returned",
+      },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Book return error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
 
