@@ -246,6 +246,24 @@ app.post("/borrows", async (req, res) => {
   }
 });
 
+// GET /borrows/:userEmail — get the borrows of the logged in user
+app.get("/borrows/:userEmail", async (req, res) => {
+  const { userEmail } = req.params;
+  const filters = { userEmail: userEmail };
+
+  try {
+    const allBorrows = await borrowsCollection.find(filters).toArray();
+
+    res.status(200).json({
+      success: true,
+      message: "Borrows retrieved successfully",
+      data: allBorrows,
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.listen(PORT, () => {
   logger.success(`Server is running on PORT: ${PORT}`);
 });
