@@ -51,8 +51,19 @@ app.get("/", (_req, res) => {
 // POST /books — add a book
 app.post("/books", async (req, res) => {
   try {
+    const { _id, addedAt, updatedAt, availableCopies, ...bookData } = req.body;
+
+    if (!Number.isInteger(bookData.totalCopies) || bookData.totalCopies < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "totalCopies must be a positive integer",
+      });
+    }
+
     const bookDoc = {
-      ...req.body,
+      ...bookData,
+      // A brand-new book has no borrows yet, so every copy is available
+      availableCopies: bookData.totalCopies,
       addedAt: new Date(),
       updatedAt: new Date(),
     };
@@ -146,24 +157,57 @@ app.patch("/books/:id", async (req, res) => {
       });
     }
 
-    const { _id, addedAt, updatedAt, ...updatedData } = req.body;
+    const currentBook = await booksCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!currentBook) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    const { _id, addedAt, updatedAt, availableCopies, ...updatedData } =
+      req.body;
 
     const updatedDoc = {
       ...updatedData,
       updatedAt: new Date(),
     };
 
-    const result = await booksCollection.updateOne(
+    // availableCopies is a derived field — the client can never set it
+    // directly. It only changes when totalCopies changes:
+    // availableCopies = totalCopies − (copies currently borrowed)
+    if ("totalCopies" in updatedData) {
+      if (
+        !Number.isInteger(updatedData.totalCopies) ||
+        updatedData.totalCopies < 1
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "totalCopies must be a positive integer",
+        });
+      }
+
+      const currentlyBorrowed =
+        currentBook.totalCopies - currentBook.availableCopies;
+      const newAvailableCopies = updatedData.totalCopies - currentlyBorrowed;
+
+      if (newAvailableCopies < 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot set total copies to ${updatedData.totalCopies}: ${currentlyBorrowed} copies are currently borrowed. Total copies must be at least ${currentlyBorrowed}.`,
+        });
+      }
+
+      updatedDoc.availableCopies = newAvailableCopies;
+    }
+
+    await booksCollection.updateOne(
       { _id: new ObjectId(id) },
       { $set: updatedDoc },
     );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
-    }
 
     const updatedBook = await booksCollection.findOne({
       _id: new ObjectId(id),
@@ -247,9 +291,18 @@ app.get("/my-books/:userEmail", async (req, res) => {
 // POST /borrows — borrow a book
 app.post("/borrows", async (req, res) => {
   try {
+    const { userEmail, bookId } = req.body;
+
+    if (!bookId || !ObjectId.isValid(bookId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing book ID",
+      });
+    }
+
     const alreadyBorrowed = await borrowsCollection.findOne({
-      userEmail: req.body.userEmail,
-      bookId: req.body.bookId,
+      userEmail: userEmail,
+      bookId: bookId,
       status: "borrowed",
     });
 
@@ -271,7 +324,7 @@ app.post("/borrows", async (req, res) => {
 
     const bookUpdate = await booksCollection.updateOne(
       {
-        _id: new ObjectId(borrowDoc.bookId),
+        _id: new ObjectId(bookId),
         availableCopies: { $gt: 0 },
       },
       { $inc: { availableCopies: -1 } },
