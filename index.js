@@ -93,7 +93,11 @@ app.post("/books", verifyToken, async (req, res) => {
 app.get("/books", async (req, res) => {
   try {
     const limit = Number(req.query.limit ?? 0);
-    const allBooks = await booksCollection.find().limit(limit).toArray();
+    const allBooks = await booksCollection
+      .find()
+      .sort({ addedAt: -1 })
+      .limit(limit)
+      .toArray();
 
     res.status(200).json({
       success: true,
