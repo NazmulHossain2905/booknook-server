@@ -21,14 +21,14 @@
 
 ## 🛠 Tech Stack
 
-| Category | Technology |
-|---|---|
-| Runtime | Node.js (ES Modules) |
-| Framework | Express.js 5 |
-| Database | MongoDB (native driver) |
+| Category       | Technology                                       |
+| -------------- | ------------------------------------------------ |
+| Runtime        | Node.js (ES Modules)                             |
+| Framework      | Express.js 5                                     |
+| Database       | MongoDB (native driver)                          |
 | Authentication | JWT ([jose](https://www.npmjs.com/package/jose)) |
-| Utilities | `cors`, `morgan`, `dotenv`, `chalk` |
-| Hosting | Vercel |
+| Utilities      | `cors`, `morgan`, `dotenv`, `chalk`              |
+| Hosting        | Vercel                                           |
 
 ## 📂 Project Structure
 
@@ -55,7 +55,7 @@ booknook-server/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/booknook-server.git
+git clone https://github.com/NazmulHossain2905/booknook-server.git
 cd booknook-server
 
 # 2. Install dependencies
@@ -74,11 +74,11 @@ npm start
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | No | Server port. Falls back to `5000`. |
-| `MONGODB_URI` | **Yes** | MongoDB connection string (local or Atlas). |
-| `CLIENT_URL` | **Yes** | Base URL of the auth server used for JWT verification (must expose `GET /api/auth/jwks`). |
+| Variable      | Required | Description                                                                               |
+| ------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `PORT`        | No       | Server port. Falls back to `5000`.                                                        |
+| `MONGODB_URI` | **Yes**  | MongoDB connection string (local or Atlas).                                               |
+| `CLIENT_URL`  | **Yes**  | Base URL of the auth server used for JWT verification (must expose `GET /api/auth/jwks`). |
 
 > ⚠️ Never commit your real `.env` file — it is already listed in `.gitignore`.
 
@@ -116,28 +116,28 @@ Authorization: Bearer <your-jwt-token>
 
 #### General
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/` | Public | Health check / server info |
+| Method | Endpoint | Auth   | Description                |
+| ------ | -------- | ------ | -------------------------- |
+| `GET`  | `/`      | Public | Health check / server info |
 
 #### Books
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/books` | Public | Get all books. Optional `?limit=` (e.g. `?limit=6`). |
-| `GET` | `/books/:id` | 🔒 Required | Get a single book by ID. |
-| `POST` | `/books` | 🔒 Required | Add a new book. |
-| `PATCH` | `/books/:id` | 🔒 Required | Update a book (partial). |
-| `DELETE` | `/books/:id` | 🔒 Required | Delete a book. |
-| `GET` | `/my-books/:userEmail` | 🔒 Required | Books added by a user, newest first. |
+| Method   | Endpoint               | Auth        | Description                                          |
+| -------- | ---------------------- | ----------- | ---------------------------------------------------- |
+| `GET`    | `/books`               | Public      | Get all books. Optional `?limit=` (e.g. `?limit=6`). |
+| `GET`    | `/books/:id`           | 🔒 Required | Get a single book by ID.                             |
+| `POST`   | `/books`               | 🔒 Required | Add a new book.                                      |
+| `PATCH`  | `/books/:id`           | 🔒 Required | Update a book (partial).                             |
+| `DELETE` | `/books/:id`           | 🔒 Required | Delete a book.                                       |
+| `GET`    | `/my-books/:userEmail` | 🔒 Required | Books added by a user, newest first.                 |
 
 #### Borrows
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST` | `/borrows` | 🔒 Required | Borrow a book. |
-| `GET` | `/borrows/:userEmail` | 🔒 Required | Books borrowed by a user, newest first. |
-| `PATCH` | `/borrows/:id` | 🔒 Required | Return a borrowed book. |
+| Method  | Endpoint              | Auth        | Description                             |
+| ------- | --------------------- | ----------- | --------------------------------------- |
+| `POST`  | `/borrows`            | 🔒 Required | Borrow a book.                          |
+| `GET`   | `/borrows/:userEmail` | 🔒 Required | Books borrowed by a user, newest first. |
+| `PATCH` | `/borrows/:id`        | 🔒 Required | Return a borrowed book.                 |
 
 ---
 
@@ -156,9 +156,8 @@ Content-Type: application/json
   "title": "Clean Code",
   "author": "Robert C. Martin",
   "category": "Programming",
-  "cover": "https://example.com/clean-code.jpg",
+  "image": "https://example.com/clean-code.jpg",
   "description": "A Handbook of Agile Software Craftsmanship.",
-  "rating": 4.6,
   "totalCopies": 80
 }
 ```
@@ -175,8 +174,7 @@ Content-Type: application/json
 
 ```json
 {
-  "totalCopies": 10,
-  "rating": 4.8
+  "totalCopies": 10
 }
 ```
 
@@ -202,9 +200,10 @@ Content-Type: application/json
 ```json
 {
   "bookId": "665f1a2b3c4d5e6f7890abcd",
-  "userEmail": "reader@example.com",
-  "userName": "Reader",
-  "photoURL": "https://example.com/avatar.jpg"
+  "bookTitle": "The Great Gatsby",
+  "bookImage": "https://example.com/avatar.jpg",
+  "bookAuthor": "Nazmul Hossain",
+  "userEmail": "nazmulhossain@example.com"
 }
 ```
 
@@ -225,32 +224,33 @@ Sets `status: "returned"`, stamps `returnedAt`, and increments `availableCopies`
 
 ### `books` collection
 
-| Field | Type | Notes |
-|---|---|---|
-| `title` | String | — |
-| `author` | String | — |
-| `category` | String | — |
-| `cover` | String | Image URL |
-| `description` | String | — |
-| `rating` | Number | — |
-| `totalCopies` | Integer | `≥ 1` |
+| Field             | Type    | Notes                    |
+| ----------------- | ------- | ------------------------ |
+| `title`           | String  | —                        |
+| `author`          | String  | —                        |
+| `category`        | String  | —                        |
+| `image`           | String  | Image URL                |
+| `description`     | String  | —                        |
+| `totalCopies`     | Integer | `≥ 1`                    |
 | `availableCopies` | Integer | Derived — server-managed |
-| `addedByEmail` | String | Owner of the listing |
-| `addedAt` | Date | Server timestamps |
-| `updatedAt` | Date | Server timestamps |
+| `addedByEmail`    | String  | Owner of the listing     |
+| `addedByImage`    | String  | Image URL                |
+| `addedAt`         | Date    | Server timestamps        |
+| `updatedAt`       | Date    | Server timestamps        |
 
 ### `borrows` collection
 
-| Field | Type | Notes |
-|---|---|---|
-| `bookId` | String | Book ObjectId |
-| `userEmail` | String | Borrower |
-| `userName` | String | — |
-| `photoURL` | String | — |
-| `borrowDate` | Date | Server timestamps |
-| `returnDate` | Date | `borrowDate + 14 days` |
-| `returnedAt` | Date / null | Set on return |
-| `status` | `"borrowed"` \| `"returned"` | — |
+| Field        | Type                         | Notes                  |
+| ------------ | ---------------------------- | ---------------------- |
+| `bookId`     | String                       | Book ObjectId          |
+| `bookTitle`  | String                       | —                      |
+| `bookImage`  | String                       | Image URL              |
+| `bookAuthor` | String                       | —                      |
+| `userEmail`  | String                       | —                      |
+| `borrowDate` | Date                         | Server timestamps      |
+| `returnDate` | Date                         | `borrowDate + 14 days` |
+| `returnedAt` | Date / null                  | Set on return          |
+| `status`     | `"borrowed"` \| `"returned"` | —                      |
 
 ---
 
